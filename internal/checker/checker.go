@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,8 +26,6 @@ const (
 	// DefaultTimeout is the default check timeout in seconds.
 	DefaultTimeout = 5
 
-	testAppID          = 6
-	testAppHash        = "eb06d4abfb49dc3eeb1aeb98ae0f581e"
 	tcpTimeout         = 1500 * time.Millisecond
 	minTimeoutDuration = time.Duration(MinTimeout) * time.Second
 )
@@ -118,7 +118,22 @@ func CheckProxy(ctx context.Context, server string, port int, secret string, tim
 		return 0, errors.Wrap(err, "create MTProxy resolver")
 	}
 
-	client := telegram.NewClient(testAppID, testAppHash, newCheckOptions(resolver))
+	var (
+		appID   = 6
+		appHash = "eb06d4abfb49dc3eeb1aeb98ae0f581e"
+	)
+
+	if id := os.Getenv("APP_ID"); id != "" {
+		if n, err := strconv.Atoi(id); err == nil {
+			appID = n
+		}
+	}
+
+	if hash := os.Getenv("APP_HASH"); hash != "" {
+		appHash = hash
+	}
+
+	client := telegram.NewClient(appID, appHash, newCheckOptions(resolver))
 
 	checkCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSec)*time.Second)
 	defer cancel()
